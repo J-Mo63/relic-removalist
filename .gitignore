@@ -84,3 +84,6 @@ VSCode Files
 /.vscode/*
 BuildingEscape.code-workspace
 
+# CMake files
+cmake-build-debug/*
+CMakeLists.txt
