@@ -18,7 +18,12 @@ void UOpenDoor::BeginPlay()
 	Super::BeginPlay();
     InitialYaw = GetOwner()->GetActorRotation().Yaw;
     TargetYaw += InitialYaw;
-    Player = GetWorld()->GetFirstPlayerController()->GetPawn();
+    TriggerObject = GetWorld()->GetFirstPlayerController()->GetPawn();
+
+    if (!PressurePlate)
+    {
+        UE_LOG(LogTemp, Error, TEXT("TriggerVolume not assigned to %s actor!"), *GetOwner()->GetName());
+    }
 }
 
 
@@ -26,19 +31,25 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    if (TriggerVolume->IsOverlappingActor(Player))
+    if (PressurePlate && PressurePlate->IsOverlappingActor(TriggerObject))
     {
-        OpenDoor(DeltaTime);
+        AdjustDoor(DeltaTime, TargetYaw, OpenSpeed);
+        TimeSinceLastAdjust = GetWorld()->GetTimeSeconds();
+    }
+    else if (GetWorld()->GetTimeSeconds() > TimeSinceLastAdjust + TimeToClose)
+    {
+        AdjustDoor(DeltaTime, InitialYaw, CloseSpeed);
     }
 }
 
-void UOpenDoor::OpenDoor(float DeltaTime)
+
+void UOpenDoor::AdjustDoor(float DeltaTime, float TargetAngle, float Speed)
 {
     FRotator Rotation = GetOwner()->GetActorRotation();
-    float Difference = abs(Rotation.Yaw - TargetYaw);
+    float Difference = abs(Rotation.Yaw - TargetAngle);
     if (Difference > 0.0f || Difference == 360.f)
     {
-        Rotation.Yaw = (Difference < 0.1f) ? TargetYaw : FMath::FInterpConstantTo(Rotation.Yaw, TargetYaw, DeltaTime, 30);
+        Rotation.Yaw = (Difference < 0.1f) ? TargetAngle : FMath::FInterpConstantTo(Rotation.Yaw, TargetAngle, DeltaTime, 30 * Speed);
         GetOwner()->SetActorRotation(Rotation);
     }
 }
