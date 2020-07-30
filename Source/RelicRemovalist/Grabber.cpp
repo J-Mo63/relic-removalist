@@ -1,27 +1,48 @@
 // Copyright Jonathan Moallem 2020
 
 
+#include "DrawDebugHelpers.h"
 #include "Grabber.h"
+#include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 
-// Sets default values for this component's properties
+#define OUT
+
 UGrabber::UGrabber()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
 
-// Called when the game starts
 void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
 
-// Called every frame
 void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	FRotator PlayerVPRotation;
+	FVector PlayerVPLocation;
+	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(
+	        OUT PlayerVPLocation,
+	        OUT PlayerVPRotation
+    );
+
+    DrawDebugLine(
+            GetWorld(),
+            PlayerVPLocation,
+            PlayerVPLocation + PlayerVPRotation.Vector() * GrabReach,
+            FColor(0, 255, 0),
+            false,
+            0.f,
+            0,
+            5.f
+    );
+
+	// Get viewpoint
+	// Perform raycast to distance
 }
 
