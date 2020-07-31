@@ -4,9 +4,12 @@
 #include "OpenDoor.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
-#include "Engine/World.h"
+#include "Components/PrimitiveComponent.h"
+#include "Components/AudioComponent.h"
 
-// Sets default values for this component's properties
+#define OUT
+
+
 UOpenDoor::UOpenDoor()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -17,8 +20,9 @@ void UOpenDoor::BeginPlay()
 {
 	Super::BeginPlay();
     InitialYaw = GetOwner()->GetActorRotation().Yaw;
-    TargetYaw += InitialYaw;
-    TriggerObject = GetWorld()->GetFirstPlayerController()->GetPawn();
+    OpenYaw += InitialYaw;
+
+    SetupAudio();
 
     if (!PressurePlate)
     {
@@ -31,14 +35,38 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-    if (PressurePlate && PressurePlate->IsOverlappingActor(TriggerObject))
+    if (!PressurePlate) { return; }
+	TArray<AActor*> OverlappingActors;
+    PressurePlate->GetOverlappingActors(OUT OverlappingActors);
+
+    float TotalMass = 0.f;
+    for (int32 i = 0; i < OverlappingActors.Num(); i++)
     {
-        AdjustDoor(DeltaTime, TargetYaw, OpenSpeed);
+        TotalMass += OverlappingActors[i]->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+    }
+
+    if (TotalMass >= MassRequired)
+    {
+        AdjustDoor(DeltaTime, OpenYaw, OpenSpeed);
         TimeSinceLastAdjust = GetWorld()->GetTimeSeconds();
+        PlaySoundIfChange(true);
     }
     else if (GetWorld()->GetTimeSeconds() > TimeSinceLastAdjust + TimeToClose)
     {
         AdjustDoor(DeltaTime, InitialYaw, CloseSpeed);
+        PlaySoundIfChange(false);
+    }
+}
+
+
+void UOpenDoor::PlaySoundIfChange(bool IsOpening)
+{
+    if (!Audio) { return; }
+
+    if (bLastOpened != IsOpening)
+    {
+        Audio->Play();
+        bLastOpened = IsOpening;
     }
 }
 
@@ -51,5 +79,14 @@ void UOpenDoor::AdjustDoor(float DeltaTime, float TargetAngle, float Speed)
     {
         Rotation.Yaw = (Difference < 0.1f) ? TargetAngle : FMath::FInterpConstantTo(Rotation.Yaw, TargetAngle, DeltaTime, 30 * Speed);
         GetOwner()->SetActorRotation(Rotation);
+    }
+}
+
+void UOpenDoor::SetupAudio()
+{
+    Audio = GetOwner()->FindComponentByClass<UAudioComponent>();
+    if (!Audio)
+    {
+        UE_LOG(LogTemp, Error, TEXT("No audio component attached to %s!"), *GetOwner()->GetName())
     }
 }

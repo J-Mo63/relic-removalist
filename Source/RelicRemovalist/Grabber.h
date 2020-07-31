@@ -31,10 +31,11 @@ private:
     void Grab();
     void Release();
 
-    void GetPlayerReachLocation(FVector &PlayerVPLocation, FRotator &PlayerVPRotation, FVector &PlayerReachLocation);
+    void GetPlayerLocationReach(FVector &PlayerVPLocation, FVector &PlayerReachLocation) const;
 
     UPROPERTY(EditAnywhere)
     int32 GrabReach = 100;
 
+    UPROPERTY()
     UPhysicsHandleComponent* PhysicsHandle = nullptr;
 };
