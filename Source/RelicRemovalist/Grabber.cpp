@@ -5,7 +5,7 @@
 #include "Grabber.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
-#include "GameFramework/Actor.h"
+#include "Components/InputComponent.h"
 
 #define OUT
 
@@ -19,19 +19,27 @@ void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
 
-	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
-    InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
+	// Setup component fields
+    SetupPhysicsHandle();
+    BindInput();
 
-	if (!PhysicsHandle)
-    {
-	    UE_LOG(LogTemp, Error, TEXT("No physics handle attached to %s!"), *GetOwner()->GetName());
-    }
+}
 
-    if (!InputComponent)
+
+void UGrabber::SetupPhysicsHandle()
+{
+    PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
+    if (!PhysicsHandle)
     {
-        UE_LOG(LogTemp, Error, TEXT("No input component attached to %s!"), *GetOwner()->GetName());
+        UE_LOG(LogTemp, Error, TEXT("No physics handle attached to %s!"), *GetOwner()->GetName())
     }
-    else
+}
+
+
+void UGrabber::BindInput()
+{
+    UInputComponent* InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
+    if (InputComponent)
     {
         InputComponent->BindAction("Grab", IE_Pressed, this, &UGrabber::Grab);
         InputComponent->BindAction("Grab", IE_Released, this, &UGrabber::Release);
@@ -43,22 +51,17 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	FRotator PlayerVPRotation;
-	FVector PlayerVPLocation;
-	GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(
-	        OUT PlayerVPLocation,
-	        OUT PlayerVPRotation
-    );
+	// Move the attached object
+}
 
-    DrawDebugLine(
-            GetWorld(),
-            PlayerVPLocation,
-            PlayerVPLocation + PlayerVPRotation.Vector() * GrabReach,
-            FColor(0, 255, 0),
-            false,
-            0.f,
-            0,
-            5.f
+
+void UGrabber::Grab()
+{
+    FRotator PlayerVPRotation;
+    FVector PlayerVPLocation;
+    GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(
+            OUT PlayerVPLocation,
+            OUT PlayerVPRotation
     );
 
     FCollisionQueryParams QueryParams(FName(TEXT("")),false, GetOwner());
@@ -73,16 +76,12 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 
     if (bDidHit)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Hit a surface!"));
+        UE_LOG(LogTemp, Warning, TEXT("GRABBED!"))
     }
 }
 
-void UGrabber::Grab()
-{
-    UE_LOG(LogTemp, Warning, TEXT("GRABBED!"));
-}
 
 void UGrabber::Release()
 {
-    UE_LOG(LogTemp, Warning, TEXT("RELEASED!"));
+    UE_LOG(LogTemp, Warning, TEXT("RELEASED!"))
 }

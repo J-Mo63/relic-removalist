@@ -22,7 +22,7 @@ void UOpenDoor::BeginPlay()
 
     if (!PressurePlate)
     {
-        UE_LOG(LogTemp, Error, TEXT("TriggerVolume not assigned to %s actor!"), *GetOwner()->GetName());
+        UE_LOG(LogTemp, Error, TEXT("TriggerVolume not assigned to %s actor!"), *GetOwner()->GetName())
     }
 }
 
