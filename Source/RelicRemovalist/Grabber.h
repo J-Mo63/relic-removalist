@@ -31,6 +31,8 @@ private:
     void Grab();
     void Release();
 
+    void GetPlayerReachLocation(FVector &PlayerVPLocation, FRotator &PlayerVPRotation, FVector &PlayerReachLocation);
+
     UPROPERTY(EditAnywhere)
     int32 GrabReach = 100;
 

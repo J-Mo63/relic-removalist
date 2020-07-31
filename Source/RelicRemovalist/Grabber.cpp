@@ -51,7 +51,21 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// Move the attached object
+	if (PhysicsHandle->GrabbedComponent)
+    {
+        FRotator PlayerVPRotation;
+        FVector PlayerVPLocation;
+        FVector PlayerReachLocation;
+        GetPlayerReachLocation(OUT PlayerVPLocation, OUT PlayerVPRotation, OUT PlayerReachLocation);
+	    PhysicsHandle->SetTargetLocation(PlayerReachLocation);
+    }
+}
+
+
+void UGrabber::GetPlayerReachLocation(FVector &PlayerVPLocation, FRotator &PlayerVPRotation, FVector &PlayerReachLocation)
+{
+    GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(OUT PlayerVPLocation, OUT PlayerVPRotation);
+    PlayerReachLocation = PlayerVPLocation + PlayerVPRotation.Vector() * GrabReach;
 }
 
 
@@ -59,29 +73,21 @@ void UGrabber::Grab()
 {
     FRotator PlayerVPRotation;
     FVector PlayerVPLocation;
-    GetWorld()->GetFirstPlayerController()->GetPlayerViewPoint(
-            OUT PlayerVPLocation,
-            OUT PlayerVPRotation
-    );
+    FVector PlayerReachLocation;
+    GetPlayerReachLocation(OUT PlayerVPLocation, OUT PlayerVPRotation, OUT PlayerReachLocation);
 
-    FCollisionQueryParams QueryParams(FName(TEXT("")),false, GetOwner());
+    FCollisionQueryParams QueryParams(NAME_None,false, GetOwner());
+
     FHitResult HitResult;
-    bool bDidHit = GetWorld()->LineTraceSingleByObjectType(
-            OUT HitResult,
-            PlayerVPLocation,
-            PlayerVPLocation + PlayerVPRotation.Vector() * GrabReach,
-            FCollisionObjectQueryParams(ECC_PhysicsBody),
-            QueryParams
-    );
-
-    if (bDidHit)
+    if (GetWorld()->LineTraceSingleByObjectType(OUT HitResult, PlayerVPLocation, PlayerReachLocation,
+            FCollisionObjectQueryParams(ECC_PhysicsBody), QueryParams))
     {
-        UE_LOG(LogTemp, Warning, TEXT("GRABBED!"))
+        PhysicsHandle->GrabComponentAtLocation(HitResult.GetComponent(), NAME_None, PlayerReachLocation);
     }
 }
 
 
 void UGrabber::Release()
 {
-    UE_LOG(LogTemp, Warning, TEXT("RELEASED!"))
+    PhysicsHandle->ReleaseComponent();
 }
