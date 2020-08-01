@@ -53,9 +53,13 @@ private:
     UPROPERTY()
     UAudioComponent* Audio = nullptr;
 
+    AActor* Player = nullptr;
+
     float InitialYaw = 0.f;
 
     float TimeSinceLastAdjust = 0.f;
 
-    bool bLastOpened = false;
+    bool bLastOpened = true;
+
+    bool bTriggered = false;
 };

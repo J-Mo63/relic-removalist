@@ -21,12 +21,24 @@ void UOpenDoor::BeginPlay()
 	Super::BeginPlay();
     InitialYaw = GetOwner()->GetActorRotation().Yaw;
     OpenYaw += InitialYaw;
+    Player = GetWorld()->GetFirstPlayerController()->GetPawn();
 
     SetupAudio();
 
     if (!PressurePlate)
     {
         UE_LOG(LogTemp, Error, TEXT("TriggerVolume not assigned to %s actor!"), *GetOwner()->GetName())
+    }
+
+    if (!Player)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Player not found!"))
+    }
+
+
+    if (Audio)
+    {
+        Audio->Play();
     }
 }
 
@@ -35,6 +47,17 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+    if (Player && PressurePlate->IsOverlappingActor(Player))
+    {
+        bTriggered = true;
+    }
+
+    if (!bTriggered)
+    {
+        AdjustDoor(DeltaTime, OpenYaw, OpenSpeed);
+        return;
+    }
+
     if (!PressurePlate) { return; }
 	TArray<AActor*> OverlappingActors;
     PressurePlate->GetOverlappingActors(OUT OverlappingActors);
@@ -42,7 +65,10 @@ void UOpenDoor::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
     float TotalMass = 0.f;
     for (int32 i = 0; i < OverlappingActors.Num(); i++)
     {
-        TotalMass += OverlappingActors[i]->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+        if (OverlappingActors[i] != Player)
+        {
+            TotalMass += OverlappingActors[i]->FindComponentByClass<UPrimitiveComponent>()->GetMass();
+        }
     }
 
     if (TotalMass >= MassRequired)
